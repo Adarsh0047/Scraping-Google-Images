@@ -12,7 +12,7 @@ options = webdriver.ChromeOptions()
 options.add_argument("--ignore-certificate-errors")
 options.add_argument("--test-type")
 options.binary_location = "D:\Workspace\Python\YOLO Vehicle detection\web_scraping\chromedriver.exe"  
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+driver = webdriver.Chrome(service=Service(ChromeDriverManager(version="114.0.5735.90").install()))
 
 
 image_url = "https://5.imimg.com/data5/ANDROID/Default/2022/6/DJ/CQ/QT/43079619/screenshot-2022-06-03-15-27-49-15-jpg-500x500.jpg"
