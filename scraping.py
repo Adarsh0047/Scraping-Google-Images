@@ -1,65 +1,98 @@
+import bs4
+import requests
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-import requests
-import io
-from PIL import Image
+from selenium.webdriver.support.ui import WebDriverWait
+import os
 import time
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support import expected_conditions as EC
 
 
-options = webdriver.ChromeOptions()
-options.add_argument("--ignore-certificate-errors")
-options.add_argument("--test-type")
-options.binary_location = "D:\Workspace\Python\YOLO Vehicle detection\web_scraping\chromedriver.exe"  
 driver = webdriver.Chrome(service=Service(ChromeDriverManager(version="114.0.5735.90").install()))
+search_url = "https://www.google.com/search?q=lorry+india&source=lnms&tbm=isch"
+driver.get(search_url)
+
+n_img = input("Enter number of images you want")
+a = input("Waiting for the user input to start..")
 
 
-image_url = "https://5.imimg.com/data5/ANDROID/Default/2022/6/DJ/CQ/QT/43079619/screenshot-2022-06-03-15-27-49-15-jpg-500x500.jpg"
+page_html = driver.page_source
+pageSoup = bs4.BeautifulSoup(page_html, "html.parser")
+containers = pageSoup.findAll("div", {"class":"isv-r PNCib MSM1fd BUooTd"})
 
-def get_google_images(wd, delay, max_images, url):
-    def scroll_down(wd):
-        wd.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(delay)
-    wd.get(url)
-    image_urls = set()
-    while len(image_urls) < max_images:
-        scroll_down(driver)
+len_containers = len(containers)
+print(f"Found {len_containers} images to download")
 
-        thumbnails = wd.find_elements(By.CLASS_NAME, "Q4LuWd")
+img_urls = []
 
-        for img in thumbnails[len(image_urls) : max_images]:
-            try:
-                img.click()
-                time.sleep(delay)
-            except:
-                continue
-            images = wd.find_elements(By.CLASS_NAME, "r48jcc pT0Scc iPVvYb")
-            for image in images:
-                if image.get_attribute("src") and "http" in image.get_attribute("src"):
-                    image_urls.add(image.get_attribute("src"))
-            print(f"Found {len(image_urls)} images.")
-    return image_urls
+def wait_for_elements_visibility(xpath):
+    wait = WebDriverWait(driver, 10)
+    elements = wait.until(EC.visibility_of_all_elements_located((By.XPATH, xpath)))
+    return elements
 
-            
+# Define the XPath to locate all the images
+images_xpath = '//*[@class="wXeWr islib nfEiy"]'
+# Get all the image elements
+image_elements = wait_for_elements_visibility(images_xpath)
+# Loop through each image element and perform actions (click, extract information, etc.)
+try:
+    for i, image_element in enumerate(image_elements):
+        if i > int(n_img):
+            break
+        # For demonstration purposes, let's click on each image
+        image_element.click()
+        # You can perform any other action you want on each image element.
+        # Add your logic here...
+        opened_img_xpath = """//*[@id="Sva75c"]/div[2]/div[2]/div[2]/div[2]/c-wiz/div/div/div/div[3]/div[1]/a/img[1]"""
+        max_wait = 0
+        while (driver.find_element(By.XPATH, opened_img_xpath).get_attribute("src").startswith("data:")
+            or driver.find_element(By.XPATH, opened_img_xpath).get_attribute("src").startswith("https://encrypted-tbn0")):
+            max_wait += 1
+            time.sleep(2)
+            if max_wait == 15:
+                break
+        opened_img_element = driver.find_element(By.XPATH, opened_img_xpath)
+        image_src_link = opened_img_element.get_attribute('src')
+        print(image_src_link)
+        img_urls.append(image_src_link)
+except Exception as e:
+    print("An error occurred:", e)
 
 
+finally:
+    driver.quit()
 
-def download_image(download_path, url, file_name):
+def download_image(url, save_path):
     try:
-        image_content = requests.get(url).content
-        print(image_content)
-        image_file = io.BytesIO(image_content)
-        image = Image.open(image_file)
-        file_path = download_path + file_name
+        response = requests.get(url)
+        response.raise_for_status()  # Check if the request was successful
 
-        with open(file_path, "wb") as f:
-            image.save(f, "JPEG")
-        print("Success")
-    except Exception as e:
-        print(f"Failed - {e}")
+        with open(save_path, 'wb') as f:
+            f.write(response.content)
+        
+        print(f"Image downloaded successfully: {url}")
 
-# download_image("", image_url, "test.jpg")
-urls = get_google_images(wd=driver, delay=1, max_images=5, url="https://www.google.com/search?q=lorry+india+road&tbm=isch&ved=2ahUKEwjRyKfk6uP_AhUB4qACHbo_ARMQ2-cCegQIABAA&oq=lorry+india+road&gs_lcp=CgNpbWcQAzoECCMQJzoFCAAQgAQ6CwgAEIAEELEDEIMBOgcIABCKBRBDOgYIABAFEB46BAgAEB46BggAEAgQHlCXBVjMH2D-IGgAcAB4AIABqwGIAfENkgEEMC4xMpgBAKABAaoBC2d3cy13aXotaW1nwAEB&sclient=img&ei=bAmbZNHiFoHEg8UPuv-EmAE&bih=680&biw=1177")
-print(urls)
-driver.quit()
+    except requests.exceptions.RequestException as e:
+        print(f"Error downloading image: {url}\n", e)
+
+with open('urls.txt','a+') as tfile:
+	tfile.write('\n'.join(img_urls))
+
+# Create a folder to save the downloaded images
+if not os.path.exists('images'):
+    os.makedirs('images')
+
+urls_open = open('urls.txt', 'r')
+Lines = urls_open.readlines()
+urls_open = [i.strip() for i in Lines]
+
+# Loop through the list of image URLs and download each image
+for idx, url in enumerate(img_urls, start=1):
+    # if url in urls_open:
+    #     continue
+    filename = f"image_{url[:]}.jpg"  # You can customize the filenames if needed
+    save_path = os.path.join('images', filename)
+    download_image(url, save_path)

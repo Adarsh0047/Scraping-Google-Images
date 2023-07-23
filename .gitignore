@@ -161,3 +161,10 @@ cython_debug/
 
 # Selenium Stuff
 *.exe
+
+# Project stuff
+*images/
+*.ipynb
+urls.txt
+
+
