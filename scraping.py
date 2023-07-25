@@ -12,10 +12,15 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager(version="114.0.5735.90").install()))
-search_url = "https://www.google.com/search?q=lorry+india&source=lnms&tbm=isch"
-driver.get(search_url)
+google_images = "https://www.google.com/imghp?hl=EN"
+driver.get(google_images)
 
 n_img = input("Enter number of images you want")
+search = input("What images do you want?")
+text_area = driver.find_element(By.XPATH, '//textarea[@class="gLFyf"]')
+text_area.send_keys(search)
+button = driver.find_element(By.XPATH, '//button[@class="Tg7LZd"]')
+driver.execute_script("arguments[0].click();", button)
 a = input("Waiting for the user input to start..")
 
 
@@ -29,7 +34,7 @@ print(f"Found {len_containers} images to download")
 img_urls = []
 
 def wait_for_elements_visibility(xpath):
-    wait = WebDriverWait(driver, 10)
+    wait = WebDriverWait(driver, 100)
     elements = wait.until(EC.visibility_of_all_elements_located((By.XPATH, xpath)))
     return elements
 
@@ -93,6 +98,6 @@ urls_open = [i.strip() for i in Lines]
 for idx, url in enumerate(img_urls, start=1):
     # if url in urls_open:
     #     continue
-    filename = f"image_{url[:]}.jpg"  # You can customize the filenames if needed
+    filename = f"image{idx}.jpg"  # You can customize the filenames if needed
     save_path = os.path.join('images', filename)
     download_image(url, save_path)
