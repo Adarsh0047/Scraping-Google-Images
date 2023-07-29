@@ -1,7 +1,5 @@
 # Scraping-Google-Images
-<<<<<<< HEAD
 This repo contains the python script to scrape from google images given any search keyword
-=======
 
 ## About
 This repo contains the python script to scrape from google images given any search keyword
