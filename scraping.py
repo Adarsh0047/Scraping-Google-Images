@@ -59,15 +59,15 @@ def main():
 
     img_urls = []
 
-    def wait_for_elements_visibility(xpath):
-        wait = WebDriverWait(driver, 20)
-        elements = wait.until(EC.visibility_of_all_elements_located((By.XPATH, xpath)))
-        return elements
+    # def wait_for_elements_visibility(xpath):
+    #     wait = WebDriverWait(driver, 150)
+    #     elements = wait.until(EC.visibility_of_all_elements_located((By.XPATH, xpath)))
+    #     return elements
 
     # Define the XPath to locate all the images
     images_xpath = '//*[@class="wXeWr islib nfEiy"]'
     # Get all the image elements
-    image_elements = wait_for_elements_visibility(images_xpath)
+    image_elements = driver.find_elements(By.XPATH, images_xpath)
 
     # Loop through each image element and perform actions (click, extract information, etc.)
     try:
